@@ -1,0 +1,59 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: insighta
+          POSTGRES_PASSWORD: insighta
+          POSTGRES_DB: insighta_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SECRET_KEY: ci-test-secret-key
+      DEBUG: "True"
+      DATABASE_URL: postgresql://insighta:insighta@localhost:5432/insighta_test
+      GITHUB_CLIENT_ID: fake-client-id
+      GITHUB_CLIENT_SECRET: fake-client-secret
+      GITHUB_REDIRECT_URI: http://localhost:8000/auth/github/callback
+      GITHUB_WEB_REDIRECT_URI: http://localhost:3000/auth/callback
+      WEB_PORTAL_ORIGIN: http://localhost:3000
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install flake8
+
+      - name: Lint
+        run: flake8 . --max-line-length=100 --exclude=migrations,__pycache__,.env
+
+      - name: Run migrations
+        run: python manage.py migrate
+
+      - name: Run tests
+        run: python manage.py test
