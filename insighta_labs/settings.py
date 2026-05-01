@@ -58,7 +58,7 @@ CORS_ALLOW_HEADERS = [
     "x-api-version",
     "x-csrftoken",
 ]
-
+APPEND_SLASH = False
 # GitHub OAuth
 GITHUB_CLIENT_ID = os.environ.get("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "")
